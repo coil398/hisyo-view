@@ -1,0 +1,12 @@
+node_modules
+.vercel
+dist
+src-tauri/target
+screenshots
+artifacts
+.local
+.grok
+*.log
+.DS_Store
+startup.sh
+.node_modules.lock
