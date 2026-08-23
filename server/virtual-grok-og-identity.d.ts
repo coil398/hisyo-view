@@ -1,9 +1,13 @@
 declare module "virtual:grok-og-identity" {
-  export type GrokOgIdentity = {
-    name: string;
-    tagline: string;
-    description: string;
+  export const grokOgIdentity: {
+    site: {
+      title?: string;
+      description?: string;
+      type?: string;
+      card?: string;
+      image?: string;
+      banner?: string;
+      color?: string;
+    };
   };
-  const value: GrokOgIdentity;
-  export default value;
 }
