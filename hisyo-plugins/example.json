@@ -1,0 +1,8 @@
+{
+  "id": "my-agent",
+  "name": "My Agent",
+  "kind": "jsonl",
+  "roots": ["~/.my-agent/sessions"],
+  "glob": "**/*.jsonl",
+  "enabled": true
+}
