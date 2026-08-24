@@ -1,0 +1,52 @@
+name: Import sanitized HISYO VIEW snapshot
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    if: github.head_ref == 'import-drive-final'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - name: Download and validate sanitized snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 4 --retry-delay 2 --connect-timeout 15 --max-time 180 \
+            'https://drive.usercontent.google.com/download?id=1dlyNK59zP07AmdpK6f2bvcAXJfA2wHXz&export=download&confirm=t' \
+            -o /tmp/hisyo.zip
+          file /tmp/hisyo.zip
+          sha256sum /tmp/hisyo.zip
+          unzip -tq /tmp/hisyo.zip
+          rm -rf /tmp/hisyo
+          mkdir -p /tmp/hisyo
+          unzip -q /tmp/hisyo.zip -d /tmp/hisyo
+          count=$(find /tmp/hisyo -type f | wc -l | tr -d ' ')
+          echo "snapshot file count: $count"
+          test "$count" -eq 242
+          test -f /tmp/hisyo/package.json
+          test -f /tmp/hisyo/src-tauri/Cargo.toml
+          test -f /tmp/hisyo/LICENSE
+      - name: Replace branch with sanitized snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a /tmp/hisyo/. .
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'Already imported.'
+            exit 0
+          fi
+          git commit -m 'Import sanitized HISYO VIEW snapshot'
+          git push origin HEAD:${{ github.head_ref }}
