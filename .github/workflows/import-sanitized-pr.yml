@@ -1,0 +1,39 @@
+name: Import sanitized HISYO VIEW snapshot
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    if: github.head_ref == 'import-sanitized-full'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - name: Download and verify sanitized snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 4 --retry-delay 2 --connect-timeout 15 --max-time 180 \
+            'https://filebin.net/hisyo-15f805ee851614c6-20260822/hisyo-public-9e.tar.xz' \
+            -o /tmp/hisyo.tar.xz
+          echo '15f805ee851614c68c6c0f91ef6371645d0c4bbe60a1b1e1be8b92f4512ee6f4  /tmp/hisyo.tar.xz' | sha256sum -c -
+      - name: Replace branch with sanitized snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/hisyo
+          tar -xJf /tmp/hisyo.tar.xz -C /tmp/hisyo
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a /tmp/hisyo/. .
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Import sanitized HISYO VIEW snapshot'
+          git push origin HEAD:${{ github.head_ref }}
